@@ -3,7 +3,6 @@
 #include <time.h>
 #include <math.h>
 
-#define TRANSITION 2    //遷移数
 #define STATE 2 //状態数 (自己ループか遷移するか)
 #define NUMBER 16	//ボールの個数
 #define STRING 10	//文字列数

@@ -6,14 +6,11 @@
 #include "./probability.h"
 #include "./state.h"
 
-#define TRANSITION 2	//遷移数
-#define STATE 2	//遷移数 (自己ループか遷移するか)
+#define STATE 2	//状態数 (自己ループか遷移するか)
 #define NUMBER 16	//ボールの個数
 #define STRING 10	//文字列数
 
 #define TSUBO_NUM 4 //ツボの数
-
-const char str[][STRING] = {"green", "red", "blue", "white"};	//ボールの色
 
 
 int main(void)
@@ -25,23 +22,16 @@ int main(void)
 		int tsubo[TSUBO_NUM][NUMBER];	//ツボの中に入っているボールの番号
 		int ball_count[TSUBO_NUM];
 		
-		int state_loop_ransu;
-		double wa;
-
 		srand(time(NULL));
 		
 		//ball_color.h
-		Ball_color(ball);
-		ball_count_init(ball_count);
-		tsubo_init(tsubo);
-		ball_put_in(tsubo, ball, ball_count);
-		test_print(tsubo, ball_count);
+		include_ball_color(ball, tsubo, ball_count);
 
 		//probability.h
 		probability_print(state_probability, output_probability, ball_count);
 		
 		//state.h
-		loop(wa, state_loop_ransu, ball_count, state_probability, output_probability);
+		loop(ball_count, state_probability, output_probability);
 
 		return 0;
 }

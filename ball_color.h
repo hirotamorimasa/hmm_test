@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define TRANSITION 2	//遷移数
 #define STATE 2	//状態数
 #define NUMBER 16	//ボールの数
 #define STRING 10	//文字列
@@ -71,7 +70,7 @@ void test_print(int tsubo[TSUBO_NUM][NUMBER], int ball_count[TSUBO_NUM])
 {
 		for(int i = 0; i < TSUBO_NUM; i++)
 		{
-			printf("つぼ%dの個数:%3d(", i, ball_count[i]);
+			printf("つぼ%dの個数:%2d (", i, ball_count[i]);
 			
 			for(int j = 0; j < ball_count[i]; j++)
 			{
@@ -83,6 +82,15 @@ void test_print(int tsubo[TSUBO_NUM][NUMBER], int ball_count[TSUBO_NUM])
 			}
 			putchar('\n');
 		}
+}
+
+void include_ball_color(int ball[NUMBER], int tsubo[TSUBO_NUM][NUMBER], int ball_count[TSUBO_NUM])
+{
+		Ball_color(ball);
+		ball_count_init(ball_count);
+		tsubo_init(tsubo);
+		ball_put_in(tsubo, ball, ball_count);
+		test_print(tsubo, ball_count);
 }
 
 
