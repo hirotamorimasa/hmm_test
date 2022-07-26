@@ -9,14 +9,14 @@
 #define TSUBO_NUM 4	//ツボの数
 
 #define TRANSITION 7	//遷移数の最大値
-#define PATTERN 50	//経路の数
+#define PATTERN 100	//経路の数
 #define COLOR 4		//色のパターン
 
 
 const char str[][STRING] = {"green", "red", "blue", "white"};
 
 
-// ランダムに遷移数を決める, 4 ~ 6回遷移する
+// ランダムに状態数を決める, 4 ~ 6回遷移する
 int Ransu(void)
 {
 		int n;
@@ -33,40 +33,117 @@ void route_switch(int output_color[PATTERN], int k)
 			output_color[i] = rand() % COLOR;
 } 
 
+int kaisa_wa(int n)
+{
+		return ( n*(n + 1)*(n + 2) )/6;
+}
+
 // 自己ループか遷移するかの乱数
 int seni_ransu(void)
 {
 		return rand() % STATE;
 } 
- //階差数列の一般項an= (n*(n + 1) ) / 2
-int kaisa_wa(int n)
+
+int kaijyo(int n)
 {
-		return ( n*(n + 1)*(n + 2) )/ 6; 
+		if(n == 0)
+			return 1;
+		
+		else
+		{
+			int num = n;
+			while(--n > 0)
+				num *= n;	
+			return num;
+		}
+}
+
+int bainary(int n)
+{
+		int b;
+		int base = 1;
+		while(n > 0)
+		{
+			b += (n % 2) * base;
+			n /= 2;
+			base *= 10;
+		}
+}
+
+void route_test_print(int k, int all_pattern, int route[PATTERN][TRANSITION])
+{
+		for(int i = 0; i < all_pattern; i++)
+		{
+			for(int j = 0; j < k; j++)
+				printf("%2d", route[i][j]);
+			putchar('\n');
+		}
+}
+
+void route_init(int k, int all_pattern, int route[PATTERN][TRANSITION])
+{
+		for(int i = 0; i < k-1; i++)
+		{
+			if(i < k - 4)
+				route[0][i] = 0;
+			else if(i >= k - 4)
+				route[0][i] = 1;
+		}
+		route[0][k-1] = 1;
+}
+
+// 一つ前の配列の要素をコピーする
+void route_cp(int k, int n, int route[PATTERN][TRANSITION])
+{
+		for(int i = 0; i < k; i++)
+			route[n][i] = route[n-1][i];
+}
+
+// k:状態数 = 遷移数 + 自己ループの回数	遷移数:4
+// 0, 1で経路を表現する
+void route_search(int k, int self_loop, int all_pattern, int route[PATTERN][TRANSITION])
+{
+		// (遷移数 - 1)! /{ (つぼの数)! * (自己ループの数=遷移数-つぼの数)! }
+		// 全パターン
+		int zero, one = TSUBO_NUM - 1;	//1は必ず３つ含まれている
+		int j = 0;	//カウント変数
+
+		if(self_loop == 0)
+			for(int i = 0; i < k; i++)
+				route[all_pattern][i] = 1;
+		else if(self_loop > 0)
+		{
+			//0が存在する個数
+			zero = k - 1 - one;
+			route_init(k, all_pattern, route);
+	
+			for(int i = 1; i < all_pattern; i++)
+			{
+				route_cp(k, i, route);
+
+				int change;
+				change = route[i][j+1];
+				route[i][j+1] = route[i][j];
+				route[i][j] = change;
+				j++;
+
+			}
+				//残りの遷移数=状態数-1
+		}		
+		route_test_print(k, all_pattern, route);
 }
 
 // 自己ループは0、遷移は1とする
-void keisan(int k, int n, double wa[PATTERN], int output_color[TRANSITION], double state_probability[TSUBO_NUM][STATE], double output_probability[TSUBO_NUM][NUMBER])
+void keisan(int k, int all_pattern, int self_loop, double wa[PATTERN], int output_color[TRANSITION], double state_probability[TSUBO_NUM][STATE], double output_probability[TSUBO_NUM][NUMBER])
 {
-		int self_loop = k - TSUBO_NUM;	//自己ループする回数 = 状態数 - つぼの個数
-		int route[PATTERN];
-		for(int i = 0; i < n; i++)
-		{
+		int route[PATTERN][TRANSITION];
+		
+		route_search(k, self_loop, all_pattern, route);
+		
+		for(int i = 0; i < all_pattern; i++)
 			for(int j = 0; j < k; j++)
-			{
-				int loop_n = seni_ransu();
-				// 自己ループする回数が残っているときの分岐
-				if(self_loop > 0)
-				{
-					wa[i] += state_probability[j][loop_n] * output_probability[j][output_color[j]];
-					if(loop_n == 0) 
-						self_loop--;
-				}
-				// 可能性が遷移しか残っていないときの分岐
-				else if(self_loop == 0)
-					wa[i] += state_probability[j][1] * output_probability[j][output_color[j]];
+				wa[i] += state_probability[j][route[i][j]] * output_probability[j][output_color[j]];
 
-			}
-		}
 }
 
 void loop_test_print(int k, int output_color[TRANSITION])
@@ -93,14 +170,15 @@ void keisan_print(int n, double wa[PATTERN])
 void loop(int ball_count[NUMBER], double state_probability[TSUBO_NUM][STATE], double output_probability[TSUBO_NUM][NUMBER])
 {
 		int output_color[TRANSITION];	//ループ4経路の7通り分
-		int k = Ransu();	//遷移数を決める変数
-		int route[PATTERN][TRANSITION + 1];	//経路パターン
-		int n = kaisa_wa(k - 2);	//階差数列の和で全経路の通りを求める(項数=遷移数-最初+最後)
+		int k = 5; //ransu();	//状態数を決める変数
 		double wa[PATTERN];
+		
+		int self_loop = k - TSUBO_NUM;	//自己ループする回数 = 状態数 - つぼの個数
+		int all_pattern = kaijyo(k - 1) / kaijyo(TSUBO_NUM - 1) * kaijyo(self_loop);
 
 		route_switch(output_color, k);
 		loop_test_print(k, output_color);
-		keisan(k, n, wa, output_color, state_probability, output_probability);
-		keisan_print(n, wa);
+		keisan(k, all_pattern, self_loop, wa, output_color, state_probability, output_probability);
+		keisan_print(all_pattern, wa);
 }
 
