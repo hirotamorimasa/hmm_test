@@ -80,16 +80,16 @@ void route_test_print(int k, int all_pattern, int route[PATTERN][TRANSITION])
 		}
 }
 
-void route_init(int k, int all_pattern, int route[PATTERN][TRANSITION])
+void route_init(int n, int k, int self_loop, int route[PATTERN][TRANSITION])
 {
-		for(int i = 0; i < k-1; i++)
+		for(int i = 0; i < k - 1; i++)
 		{
-			if(i < k - 4)
-				route[0][i] = 0;
-			else if(i >= k - 4)
-				route[0][i] = 1;
+			if(i < self_loop)
+				route[n][i] = 0;
+			else if(i >= self_loop)
+				route[n][i] = 1;
 		}
-		route[0][k-1] = 1;
+		route[n][k-1] = 1;
 }
 
 // 一つ前の配列の要素をコピーする
@@ -103,32 +103,33 @@ void route_cp(int k, int n, int route[PATTERN][TRANSITION])
 // 0, 1で経路を表現する
 void route_search(int k, int self_loop, int all_pattern, int route[PATTERN][TRANSITION])
 {
-		// (遷移数 - 1)! /{ (つぼの数)! * (自己ループの数=遷移数-つぼの数)! }
-		// 全パターン
-		int zero, one = TSUBO_NUM - 1;	//1は必ず３つ含まれている
-		int j = 0;	//カウント変数
+		int j = 0, count = 0;	//カウント変数
 
 		if(self_loop == 0)
 			for(int i = 0; i < k; i++)
-				route[all_pattern][i] = 1;
+				route[self_loop][i] = 1;
+		
 		else if(self_loop > 0)
 		{
-			//0が存在する個数
-			zero = k - 1 - one;
-			route_init(k, all_pattern, route);
+			route_init(0, k, self_loop, route);
 	
 			for(int i = 1; i < all_pattern; i++)
 			{
-				route_cp(k, i, route);
-
 				int change;
+				route_cp(k, i, route);
+				
+				//最上位が0から1に変わる
+				if(route[i][k-2] == 0)
+				{
+					j = 0;
+					count++;
+				}
+				
 				change = route[i][j+1];
 				route[i][j+1] = route[i][j];
 				route[i][j] = change;
 				j++;
-
 			}
-				//残りの遷移数=状態数-1
 		}		
 		route_test_print(k, all_pattern, route);
 }
@@ -137,7 +138,7 @@ void route_search(int k, int self_loop, int all_pattern, int route[PATTERN][TRAN
 void keisan(int k, int all_pattern, int self_loop, double wa[PATTERN], int output_color[TRANSITION], double state_probability[TSUBO_NUM][STATE], double output_probability[TSUBO_NUM][NUMBER])
 {
 		int route[PATTERN][TRANSITION];
-		
+
 		route_search(k, self_loop, all_pattern, route);
 		
 		for(int i = 0; i < all_pattern; i++)
@@ -162,19 +163,33 @@ void loop_test_print(int k, int output_color[TRANSITION])
 
 void keisan_print(int n, double wa[PATTERN])
 {
+		double min;
+
 		printf("all_pattern:%d\n", n);
 		for(int i = 0; i < n; i++)
 				printf("wa[%2d]:%lf\n", i, wa[i]);
+		
+		for(int i = 0; i < n; i++)
+		{
+			if(i == 0)
+				min = wa[i];
+			else
+				if(min > wa[i])
+					min = wa[i];
+
+		}
+
+		printf("min:%lf\n", min);
 }
 
 void loop(int ball_count[NUMBER], double state_probability[TSUBO_NUM][STATE], double output_probability[TSUBO_NUM][NUMBER])
 {
 		int output_color[TRANSITION];	//ループ4経路の7通り分
-		int k = 5; //ransu();	//状態数を決める変数
+		int k = 6;		//ransu();	//状態数を決める変数
 		double wa[PATTERN];
 		
 		int self_loop = k - TSUBO_NUM;	//自己ループする回数 = 状態数 - つぼの個数
-		int all_pattern = kaijyo(k - 1) / kaijyo(TSUBO_NUM - 1) * kaijyo(self_loop);
+		int all_pattern = kaijyo(k - 1) / (kaijyo(k - 1 - self_loop) * kaijyo(self_loop));
 
 		route_switch(output_color, k);
 		loop_test_print(k, output_color);
